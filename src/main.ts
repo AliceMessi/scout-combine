@@ -18,6 +18,7 @@ import { percentile } from './scoring'
 import { openStore, type RunRecord, type Store } from './store'
 import { createOperatorMenu } from './operator'
 import { loadSettings, saveSettings } from './settings'
+import { createLive } from './live'
 
 const canvas = document.getElementById('game') as HTMLCanvasElement
 const ctx = canvas.getContext('2d')!
@@ -36,6 +37,7 @@ const fx = createFx(reducedMotion)
 const drills = createDrillRenderer(fx)
 const settings = loadSettings()
 audio.setEnabled(settings.sound)
+const live = createLive()
 /** Uncaught errors since start-up, shown in the operator menu. */
 let errorCount = 0
 window.addEventListener('error', () => void errorCount++)
@@ -62,6 +64,7 @@ async function saveRun(r: RunResult) {
     if (!store) throw new Error('no storage')
     await store.save(rec)
     savedRuns++
+    live.post({ type: 'run-end', record: rec })
   } catch (err) {
     console.error('Scout Combine: run not saved', err)
     cardLine = 'NOT SAVED — TELL THE BOOTH STAFF'
@@ -172,9 +175,21 @@ function update(realDt: number) {
     const drill = run.drill
     const events = run.step(dt, all, a)
     handle(events, drill, false)
+    for (const e of events) {
+      if (e.type === 'phase' && e.phase === 'rule') {
+        const tagStr = run.tag.letters.join('')
+        if (run.drillIndex === 0) {
+          live.post({ type: 'run-start', tag: tagStr })
+        }
+        if (run.drill) {
+          live.post({ type: 'drill', tag: tagStr, drill: run.drill })
+        }
+      }
+    }
     if (events.some(e => e.type === 'phase' && e.phase === 'card')) void saveRun(run.result()!)
     if (run.phase === 'over' || run.phase === 'abandoned') {
       if (run.phase === 'over') lastTag = run.tag.letters.join('')
+      live.post({ type: 'idle' })
       run = null
       runBot = null
       fx.clear()

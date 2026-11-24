@@ -17,3 +17,20 @@ test('after one visit the game loads with the network off', async ({ page, conte
   await context.setOffline(false)
   expect(errors).toEqual([])
 })
+
+test('after one visit the board loads with the network off', async ({ page, context }) => {
+  const errors = collectErrors(page)
+  await page.goto('/board.html')
+  await page.evaluate(async () => {
+    await navigator.serviceWorker.ready
+    if (!navigator.serviceWorker.controller)
+      await new Promise(r => navigator.serviceWorker.addEventListener('controllerchange', r, { once: true }))
+  })
+  await context.setOffline(true)
+  await page.reload()
+  await expect
+    .poll(() => page.evaluate(() => typeof (window as unknown as { __board?: object }).__board))
+    .toBe('object')
+  await context.setOffline(false)
+  expect(errors).toEqual([])
+})

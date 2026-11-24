@@ -1,8 +1,19 @@
-import { defineConfig } from 'vite'
+import { defineConfig } from 'vitest/config'
 import { VitePWA } from 'vite-plugin-pwa'
 
 export default defineConfig({
-  build: { target: 'es2022' },
+  test: {
+    include: ['tests/**/*.test.ts'],
+  },
+  build: {
+    target: 'es2022',
+    rollupOptions: {
+      input: {
+        main: 'index.html',
+        board: 'board.html',
+      },
+    },
+  },
   plugins: [
     // Offline booth: a service worker precaches every built file on the first visit.
     VitePWA({

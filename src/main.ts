@@ -19,6 +19,7 @@ import { openStore, type RunRecord, type Store } from './store'
 import { createOperatorMenu } from './operator'
 import { loadSettings, saveSettings } from './settings'
 import { createLive } from './live'
+import { exportCsv } from './exportCsv'
 
 const canvas = document.getElementById('game') as HTMLCanvasElement
 const ctx = canvas.getContext('2d')!
@@ -96,6 +97,16 @@ const operator = createOperatorMenu({
   },
   errors: () => errorCount,
   savedRuns: () => savedRuns,
+  extra: [
+    {
+      label: 'Export CSV',
+      run: async () => {
+        const s = await storeReady
+        if (!s) throw new Error('storage unavailable')
+        return exportCsv(s)
+      },
+    },
+  ],
 })
 
 let gameMs = 0

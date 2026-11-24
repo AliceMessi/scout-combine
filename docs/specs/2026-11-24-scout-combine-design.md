@@ -45,7 +45,7 @@ All timings use the game clock (section 7), so tests and the bot can run faster 
 
 ### 3.2 Flick (35 s)
 
-- One circular target at a time. Each new target appears at least 25% of the play-area width away from the previous one, so every hit is a flick.
+- One circular target at a time. Each new target appears at least 25% of the play-area width away from the previous one, so every hit is a flick. Targets stay between y = 100 and y = 820, clear of the timer and the stats line.
 - The target radius starts at 4% of the play-area height and shrinks linearly to 1.8% by the end of the drill.
 - Click inside: hit, next target. Click outside: miss (counted, target stays).
 - **Metric:** Fitts throughput per hit, `TP = log2(D / W + 1) / MT` (D distance from the previous target, W target diameter, MT time from target appearance to hit, in seconds), averaged over hits; and accuracy `hits / (hits + misses)`.

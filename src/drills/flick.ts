@@ -10,6 +10,9 @@ export const FLICK_MS = 35000
 const MIN_JUMP = 0.25 * PLAY_W // 400
 const R0 = 0.04 * PLAY_H // 36
 const R1 = 0.018 * PLAY_H // 16.2
+/** Targets stay clear of the timer (top) and the stats line (bottom). */
+const ZONE_TOP = 100
+const ZONE_BOTTOM = 820
 
 /** Target radius for a target spawned at game time t. */
 export function radiusAt(t: number): number {
@@ -31,12 +34,12 @@ export function createFlick(rng: Rng): Drill<FlickMetrics, FlickView> {
     const r = radiusAt(now)
     for (let i = 0; i < 200; i++) {
       const x = r + rng() * (PLAY_W - 2 * r)
-      const y = r + rng() * (PLAY_H - 2 * r)
+      const y = ZONE_TOP + r + rng() * (ZONE_BOTTOM - ZONE_TOP - 2 * r)
       if (Math.hypot(x - from.x, y - from.y) >= MIN_JUMP) return { x, y, r }
     }
     // Fallback (practically unreachable): the corner farthest from `from`.
     const x = from.x < PLAY_W / 2 ? PLAY_W - r : r
-    const y = from.y < PLAY_H / 2 ? PLAY_H - r : r
+    const y = from.y < PLAY_H / 2 ? ZONE_BOTTOM - r : ZONE_TOP + r
     return { x, y, r }
   }
   const done = () => t >= FLICK_MS

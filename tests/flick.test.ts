@@ -24,7 +24,8 @@ describe('Flick drill', () => {
       const t = d.view().target
       expect(dist(t, prev)).toBeGreaterThanOrEqual(400)
       expect(t.x - t.r).toBeGreaterThanOrEqual(0)
-      expect(t.y - t.r).toBeGreaterThanOrEqual(0)
+      expect(t.y - t.r).toBeGreaterThanOrEqual(100) // clear of the timer
+      expect(t.y + t.r).toBeLessThanOrEqual(820) // clear of the stats line
       expect(t.x + t.r).toBeLessThanOrEqual(1600)
       expect(t.y + t.r).toBeLessThanOrEqual(900)
       prev = t

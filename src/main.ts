@@ -16,6 +16,8 @@ import { createRun, type Run, type RunResult } from './run'
 import { localDay } from './day'
 import { percentile } from './scoring'
 import { openStore, type RunRecord, type Store } from './store'
+import { createOperatorMenu } from './operator'
+import { loadSettings, saveSettings } from './settings'
 
 const canvas = document.getElementById('game') as HTMLCanvasElement
 const ctx = canvas.getContext('2d')!
@@ -32,6 +34,12 @@ const input = createInput(canvas)
 const audio = createAudio()
 const fx = createFx(reducedMotion)
 const drills = createDrillRenderer(fx)
+const settings = loadSettings()
+audio.setEnabled(settings.sound)
+/** Uncaught errors since start-up, shown in the operator menu. */
+let errorCount = 0
+window.addEventListener('error', () => void errorCount++)
+window.addEventListener('unhandledrejection', () => void errorCount++)
 
 let run: Run | null = null
 let runBot: Bot | null = null
@@ -68,6 +76,25 @@ async function saveRun(r: RunResult) {
     cardLine = 'SAVED'
   }
 }
+const operator = createOperatorMenu({
+  sound: () => settings.sound,
+  setSound(on) {
+    settings.sound = on
+    saveSettings(settings)
+    audio.setEnabled(on)
+  },
+  async clearToday() {
+    const store = await storeReady
+    if (!store) throw new Error('storage unavailable')
+    const day = localDay(new Date())
+    const n = (await store.byDay(day)).length
+    await store.clearDay(day)
+    return n
+  },
+  errors: () => errorCount,
+  savedRuns: () => savedRuns,
+})
+
 let gameMs = 0
 let last = performance.now()
 let view = { s: 1, ox: 0, oy: 0, dpr: 1 }
@@ -207,8 +234,16 @@ function draw() {
   runs: () => savedRuns,
 }
 
+// The loop sleeps while the tab is hidden and while the operator menu is open: no game time passes.
+let hidden = document.hidden
+document.addEventListener('visibilitychange', () => {
+  hidden = document.hidden
+  last = performance.now()
+})
+
 function frame(now: number) {
-  update(now - last)
+  if (!hidden && !operator.isOpen()) update(now - last)
+  else input.drain()
   last = now
   draw()
   requestAnimationFrame(frame)

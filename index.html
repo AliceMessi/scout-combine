@@ -7,6 +7,16 @@
     <style>
       html, body { margin: 0; height: 100%; background: #0b1530; overflow: hidden; }
       canvas { display: block; width: 100vw; height: 100vh; touch-action: none; cursor: crosshair; }
+      #operator { position: fixed; inset: 50% auto auto 50%; transform: translate(-50%, -50%); min-width: 360px;
+        background: #13224a; color: #fff; border: 3px solid #4fc3f7; border-radius: 16px; padding: 20px 24px;
+        font: 600 18px system-ui, sans-serif; display: flex; flex-direction: column; gap: 10px; }
+      #operator[hidden] { display: none; }
+      #operator h2 { margin: 0 0 4px; font-size: 22px; color: #ffc94d; }
+      #operator p { margin: 0; color: #c9d6f2; }
+      #operator button { font: inherit; padding: 10px 14px; border-radius: 10px; border: 2px solid #4fc3f7;
+        background: #0b1530; color: #fff; cursor: pointer; text-align: left; }
+      #operator button:focus-visible { outline: 3px solid #ffc94d; outline-offset: 2px; }
+      #operator button.danger { border-color: #ff6b6b; }
     </style>
   </head>
   <body>

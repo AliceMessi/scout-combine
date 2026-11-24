@@ -12,7 +12,10 @@ import { createFx } from './render/fx'
 import { drawAttract, drawCard, drawHud, drawRule, drawTag } from './render/screens'
 import { C, drawSky } from './render/theme'
 import { mulberry32 } from './rng'
-import { createRun, type Run } from './run'
+import { createRun, type Run, type RunResult } from './run'
+import { localDay } from './day'
+import { percentile } from './scoring'
+import { openStore, type RunRecord, type Store } from './store'
 
 const canvas = document.getElementById('game') as HTMLCanvasElement
 const ctx = canvas.getContext('2d')!
@@ -35,6 +38,36 @@ let runBot: Bot | null = null
 /** The attract screen plays a silent demo run with a sharp bot behind the title. */
 let demo: { run: Run; bot: Bot } | null = null
 let lastTag = 'AAA'
+/** The line under the overall score on the card; updated once the run is saved. */
+let cardLine = ''
+let savedRuns = 0
+const storeReady: Promise<Store | null> = openStore().catch(err => {
+  console.error('Scout Combine: storage unavailable', err)
+  return null
+})
+
+async function saveRun(r: RunResult) {
+  cardLine = 'SAVING…'
+  const rec: RunRecord = { id: crypto.randomUUID(), day: localDay(new Date()), endedAt: Date.now(), ...r }
+  const store = await storeReady
+  try {
+    if (!store) throw new Error('no storage')
+    await store.save(rec)
+    savedRuns++
+  } catch (err) {
+    console.error('Scout Combine: run not saved', err)
+    cardLine = 'NOT SAVED — TELL THE BOOTH STAFF'
+    return
+  }
+  try {
+    const today = await store.byDay(rec.day)
+    const p = percentile(rec.scores.overall, today.map(x => x.scores.overall))
+    cardLine = p === null ? 'EARLY BIRD — NOT ENOUGH PLAYERS YET' : `BETTER THAN ${p}% OF TODAY'S PLAYERS`
+  } catch (err) {
+    console.error('Scout Combine: could not read today', err)
+    cardLine = 'SAVED'
+  }
+}
 let gameMs = 0
 let last = performance.now()
 let view = { s: 1, ox: 0, oy: 0, dpr: 1 }
@@ -110,7 +143,9 @@ function update(realDt: number) {
     }
     const all = runBot ? [...p, ...autoPresses(run, runBot, gameMs)] : p
     const drill = run.drill
-    handle(run.step(dt, all, a), drill, false)
+    const events = run.step(dt, all, a)
+    handle(events, drill, false)
+    if (events.some(e => e.type === 'phase' && e.phase === 'card')) void saveRun(run.result()!)
     if (run.phase === 'over' || run.phase === 'abandoned') {
       if (run.phase === 'over') lastTag = run.tag.letters.join('')
       run = null
@@ -158,7 +193,7 @@ function draw() {
       case 'tag': drawTag(ctx, run, gameMs); break
       case 'rule': drawRule(ctx, run); break
       case 'drill': drawDrill(run); break
-      case 'card': drawCard(ctx, run.result()!, run.phaseMs, 'PERCENTILE  —'); break
+      case 'card': drawCard(ctx, run.result()!, run.phaseMs, cardLine); break
     }
   }
   fx.draw(ctx)
@@ -169,6 +204,7 @@ function draw() {
 ;(window as unknown as { __scout: object }).__scout = {
   phase: () => (run ? run.phase : 'attract'),
   drill: () => run?.drill ?? null,
+  runs: () => savedRuns,
 }
 
 function frame(now: number) {

@@ -19,12 +19,29 @@ export const WINDUP_MS = 350
 const COOLDOWN_MS = 800
 const GAP_MS = 300
 
-export function createLastHit(rng: Rng): Drill<LastHitMetrics, LastHitView> {
+/**
+ * Allies attack each unit with a steady rhythm and a steady hit, like lane minions:
+ * the skill is reading that rhythm and firing 350 ms ahead of it.
+ */
+export type LastHitTuning = {
+  intervalMin: number // ms between ally hits, chosen per unit
+  intervalSpread: number
+  jitter: number // +- ms on each hit
+  chunkMin: number // hp per ally hit, chosen per unit
+  chunkSpread: number
+  chunkJitter: number // +- hp on each hit
+}
+export const LASTHIT_TUNING: LastHitTuning = { intervalMin: 350, intervalSpread: 200, jitter: 40, chunkMin: 18, chunkSpread: 4, chunkJitter: 1 }
+
+export function createLastHit(rng: Rng, tuning: LastHitTuning = LASTHIT_TUNING): Drill<LastHitMetrics, LastHitView> {
   let t = 0
   let hp = 100
   let alive = true
   let unitId = 1
   let unitStart = 0
+  let unitInterval = 0
+  let unitChunk = 0
+  newRhythm()
   let nextAlly = allyInterval(0)
   let spawnAt = Infinity
   let shotAt: number | null = null
@@ -32,8 +49,12 @@ export function createLastHit(rng: Rng): Drill<LastHitMetrics, LastHitView> {
   let lastOutcome: LastHitView['lastOutcome'] = null
   const m: LastHitMetrics = { lastHits: 0, early: 0, missed: 0, units: 0 }
 
+  function newRhythm() {
+    unitInterval = tuning.intervalMin + rng() * tuning.intervalSpread
+    unitChunk = tuning.chunkMin + rng() * tuning.chunkSpread
+  }
   function allyInterval(from: number) {
-    return from + 400 + rng() * 500
+    return from + unitInterval + (rng() * 2 - 1) * tuning.jitter
   }
   function die(at: number, outcome: 'last' | 'missed', events: DrillEvent[]) {
     alive = false
@@ -74,7 +95,7 @@ export function createLastHit(rng: Rng): Drill<LastHitMetrics, LastHitView> {
             events.push({ type: 'early' })
           }
         } else if (next === ally) {
-          hp -= 8 + rng() * 12
+          hp -= unitChunk + (rng() * 2 - 1) * tuning.chunkJitter
           if (hp <= 0) die(ally, 'missed', events)
           else nextAlly = allyInterval(ally)
         } else {
@@ -82,6 +103,7 @@ export function createLastHit(rng: Rng): Drill<LastHitMetrics, LastHitView> {
           hp = 100
           unitId++
           unitStart = spawn
+          newRhythm()
           nextAlly = allyInterval(spawn)
           events.push({ type: 'spawn' })
         }

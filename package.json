@@ -12,6 +12,7 @@
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
+    "tsx": "4.23.15",
     "typescript": "6.0.3",
     "vite": "8.3.7",
     "vitest": "5.1.0"

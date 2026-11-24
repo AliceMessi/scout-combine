@@ -55,7 +55,7 @@ All timings use the game clock (section 7), so tests and the bot can run faster 
 
 The farming skill of lane-based games, with original art and names.
 
-- Units walk in a single lane, one "front" unit at a time. Allied attacks take chunks of 8–20% of its health at random intervals of 0.4–0.9 s.
+- Units walk in a single lane, one "front" unit at a time. Allied drones hit it with a **steady rhythm**, like lane minions: each unit gets an interval of 350–550 ms (±40 ms per hit) and a hit of 18–22% of its health (±1 per hit). Reading that rhythm is the skill. (Changed on 24/11 after the balance check: with random 0.4–0.9 s intervals and 8–20% hits, all bot levels scored a median of 50, so the drill measured luck, not skill. See `docs/BALANCE.md` and `scripts/lasthit-sweep.ts`.)
 - The player has a fixed damage shown as a marker on the health bar (30% of max health). A press (click anywhere or the action key) fires a shot that lands **350 ms later** (the attack wind-up), so the player must predict, not react.
 - When the shot lands: health ≤ the player's damage → **last hit** (gold). Health above it → **early**: the shot removes the player's damage (30% of max health) but the unit survives, and the player cannot shoot for 0.8 s. If allied attacks kill the unit before the player's shot lands → **missed**.
 - **Metric:** last hits, early hits, missed units.

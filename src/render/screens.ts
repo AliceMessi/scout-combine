@@ -12,7 +12,7 @@ export const DRILL_RULE = {
 
 export function drawAttract(ctx: CanvasRenderingContext2D, tMs: number, demo: boolean) {
   const s = tMs / 1000
-  ctx.fillStyle = demo ? 'rgba(11, 21, 48, 0.55)' : 'rgba(0,0,0,0)'
+  ctx.fillStyle = demo ? 'rgba(11, 21, 48, 0.74)' : 'rgba(0,0,0,0)'
   ctx.fillRect(0, 0, 1600, 900)
   text(ctx, 'SCOUT', 800, 250, 150, C.white, { weight: 900, glow: C.cyan, spacing: 12 })
   text(ctx, 'COMBINE', 800, 380, 150, C.cyan, { weight: 900, glow: C.cyan, spacing: 12 })

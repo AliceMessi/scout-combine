@@ -1,9 +1,10 @@
 import { createAudio, type Sound } from './audio'
+import { autoPresses, createBot, type Bot, type BotLevel } from './bot'
 import { createClock } from './clock'
 import type { FlickMetrics, FlickView } from './drills/flick'
 import type { LastHitMetrics, LastHitView } from './drills/lasthit'
 import type { ReactionMetrics, ReactionView } from './drills/reaction'
-import type { DrillEvent, DrillName } from './drills/types'
+import type { DrillEvent, DrillName, Press } from './drills/types'
 import { PLAY_H, PLAY_W } from './drills/types'
 import { createInput } from './input'
 import { createDrillRenderer } from './render/drills'
@@ -17,6 +18,9 @@ const canvas = document.getElementById('game') as HTMLCanvasElement
 const ctx = canvas.getContext('2d')!
 const params = new URLSearchParams(location.search)
 const speed = Math.max(0.1, Number(params.get('speed')) || 1)
+const levelParam = params.get('autoplay')
+/** URL `?autoplay=casual|average|sharp`: a bot plays real runs (e2e tests, soak test, demos). */
+const autoplay: BotLevel | null = levelParam === 'casual' || levelParam === 'average' || levelParam === 'sharp' ? levelParam : null
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches
 
 const clock = createClock({ scale: speed })
@@ -27,6 +31,9 @@ const fx = createFx(reducedMotion)
 const drills = createDrillRenderer(fx)
 
 let run: Run | null = null
+let runBot: Bot | null = null
+/** The attract screen plays a silent demo run with a sharp bot behind the title. */
+let demo: { run: Run; bot: Bot } | null = null
 let lastTag = 'AAA'
 let gameMs = 0
 let last = performance.now()
@@ -47,22 +54,44 @@ const DRILL_SOUND: Record<string, Sound | undefined> = {
   hit: 'hit', miss: 'miss', early: 'early', signal: 'signal', shoot: 'shoot', last: 'last', missed: 'missed',
 }
 
-function handle(events: DrillEvent[], drill: DrillName | null) {
+function handle(events: DrillEvent[], drill: DrillName | null, silent: boolean) {
+  const play = (s: Sound) => {
+    if (!silent) audio.play(s)
+  }
   for (const e of events) {
     if (e.type === 'phase') {
-      if (e.phase === 'rule') audio.play('drill')
+      if (e.phase === 'rule') play('drill')
       if (e.phase === 'drill') drills.reset()
-      if (e.phase === 'card') audio.play('card')
+      if (e.phase === 'card') play('card')
       continue
     }
-    if (e.type === 'tick') audio.play('tick')
-    else if (e.type === 'refused') audio.play('refused')
+    if (e.type === 'tick') play('tick')
+    else if (e.type === 'refused') play('refused')
     else if (drill) {
       const s = DRILL_SOUND[e.type]
-      if (s) audio.play(s)
-      drills.onEvent(drill, e)
+      if (s) play(s)
+      if (!silent) drills.onEvent(drill, e)
     }
   }
+}
+
+function startRun() {
+  demo = null
+  fx.clear()
+  drills.reset()
+  run = createRun(rng, lastTag)
+  runBot = autoplay ? createBot(autoplay, rng) : null
+  audio.play('go')
+}
+
+function stepDemo(dt: number) {
+  if (!demo || demo.run.phase === 'over' || demo.run.phase === 'abandoned' || demo.run.phase === 'card') {
+    demo = { run: createRun(rng, 'BOT'), bot: createBot('sharp', rng) }
+    drills.reset()
+  }
+  const d = demo.run
+  const drill = d.drill
+  handle(d.step(dt, autoPresses(d, demo.bot, gameMs), []), drill, true)
 }
 
 function update(realDt: number) {
@@ -71,25 +100,42 @@ function update(realDt: number) {
   const { presses, arrows } = input.drain()
   if (presses.length || arrows.length) audio.unlock()
   steps.forEach((dt, i) => {
-    const p = i === 0 ? presses : []
+    const p: Press[] = i === 0 ? presses : []
     const a = i === 0 ? arrows : []
     gameMs += dt
     if (!run) {
-      if (p.length) {
-        run = createRun(rng, lastTag)
-        audio.play('go')
-      }
+      if (p.length || autoplay) startRun()
+      else stepDemo(dt)
       return
     }
+    const all = runBot ? [...p, ...autoPresses(run, runBot, gameMs)] : p
     const drill = run.drill
-    handle(run.step(dt, p, a), drill)
+    handle(run.step(dt, all, a), drill, false)
     if (run.phase === 'over' || run.phase === 'abandoned') {
       if (run.phase === 'over') lastTag = run.tag.letters.join('')
       run = null
+      runBot = null
       fx.clear()
     }
   })
   fx.update(steps.reduce((x, y) => x + y, 0))
+}
+
+function drawDrill(r: Run) {
+  const d = r.current()!
+  if (d.name === 'reaction') {
+    const v = d.view() as ReactionView
+    drills.reaction(ctx, v, d.metrics() as ReactionMetrics, gameMs)
+    drawHud(ctx, r, v.remainingMs, d.durationMs, '')
+  } else if (d.name === 'flick') {
+    const v = d.view() as FlickView
+    drills.flick(ctx, v, d.metrics() as FlickMetrics, r === run ? input.pointer() : { x: -100, y: -100 }, gameMs)
+    drawHud(ctx, r, v.remainingMs, d.durationMs, '')
+  } else {
+    const v = d.view() as LastHitView
+    drills.lasthit(ctx, v, d.metrics() as LastHitMetrics, gameMs)
+    drawHud(ctx, r, v.remainingMs, d.durationMs, '')
+  }
 }
 
 function draw() {
@@ -104,28 +150,14 @@ function draw() {
   ctx.rect(0, 0, PLAY_W, PLAY_H)
   ctx.clip()
   drawSky(ctx, gameMs, reducedMotion, run?.phase === 'drill')
-  if (!run) drawAttract(ctx, gameMs, false)
-  else {
+  if (!run) {
+    if (demo?.run.phase === 'drill') drawDrill(demo.run)
+    drawAttract(ctx, gameMs, true)
+  } else {
     switch (run.phase) {
       case 'tag': drawTag(ctx, run, gameMs); break
       case 'rule': drawRule(ctx, run); break
-      case 'drill': {
-        const d = run.current()!
-        if (d.name === 'reaction') {
-          const v = d.view() as ReactionView
-          drills.reaction(ctx, v, d.metrics() as ReactionMetrics, gameMs)
-          drawHud(ctx, run, v.remainingMs, d.durationMs, '')
-        } else if (d.name === 'flick') {
-          const v = d.view() as FlickView
-          drills.flick(ctx, v, d.metrics() as FlickMetrics, input.pointer(), gameMs)
-          drawHud(ctx, run, v.remainingMs, d.durationMs, '')
-        } else {
-          const v = d.view() as LastHitView
-          drills.lasthit(ctx, v, d.metrics() as LastHitMetrics, gameMs)
-          drawHud(ctx, run, v.remainingMs, d.durationMs, '')
-        }
-        break
-      }
+      case 'drill': drawDrill(run); break
       case 'card': drawCard(ctx, run.result()!, run.phaseMs, 'PERCENTILE  —'); break
     }
   }

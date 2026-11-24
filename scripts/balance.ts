@@ -18,7 +18,7 @@ for (const level of ['casual', 'average', 'sharp'] as BotLevel[]) {
 const md = `# Balance check
 
 ${N} headless runs per bot level (\`npx tsx scripts/balance.ts\`), same drill and scoring code as the game, 8 ms steps.
-The bots model three kinds of player (see \`src/bot.ts\`): reaction time mean/sd 330/60, 260/40, 200/25 ms; Flick throughput 3.0, 4.5, 6.0 bit/s with 15%, 8%, 3% misses; Last Hit aim error sd 9, 5, 2 hp.
+The bots model three kinds of player (see \`src/bot.ts\`): reaction time mean/sd 330/60, 260/40, 200/25 ms; Flick throughput 3.0, 4.5, 6.0 bit/s with 15%, 8%, 3% misses; Last Hit reads the ally rhythm from the health bar and times its shot with an error sd of 150, 70, 30 ms.
 
 What we want: the three levels clearly separated, and scores spread over most of the 0-100 range so a booth leaderboard means something.
 

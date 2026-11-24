@@ -9,7 +9,11 @@
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
     "test": "vitest run",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "e2e": "playwright test",
+    "soak": "tsx e2e/soak.ts",
+    "balance": "tsx scripts/balance.ts",
+    "screenshots": "tsx e2e/screenshots.ts"
   },
   "devDependencies": {
     "@playwright/test": "1.64.0",

@@ -1,0 +1,11 @@
+node_modules/
+dist/
+.superpowers/
+test-results/
+playwright-report/
+.idea/workspace.xml
+.idea/usage.statistics.xml
+.idea/shelf/
+.idea/tasks.xml
+.env
+*.log

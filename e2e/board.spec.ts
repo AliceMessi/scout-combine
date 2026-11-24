@@ -18,7 +18,7 @@ test('the board window shows the run live and lists it when it ends', async ({ c
   await game.goto('/?autoplay=sharp&speed=20')
   await expect.poll(() => board(boardPage).live(), { timeout: 30_000 }).toBe('drill')
   await expect.poll(() => scout(game).runs(), { timeout: 30_000 }).toBe(1)
-  await expect.poll(() => board(boardPage).tags(), { timeout: 10_000 }).toEqual(['AAA'])
+  await expect.poll(() => board(boardPage).tags(), { timeout: 10_000 }).toEqual(['BOT'])
   expect(boardErrors).toEqual([])
   expect(gameErrors).toEqual([])
 })

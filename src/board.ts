@@ -1,4 +1,4 @@
-import { boardState } from './boardState'
+import { boardState, dataStatus } from './boardState'
 import { localDay } from './day'
 import { PLAY_H, PLAY_W } from './drills/types'
 import { createLive, type LiveMsg } from './live'
@@ -13,26 +13,35 @@ const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches
 let runs: RunRecord[] = []
 let liveMsg: LiveMsg | null = null
 let offlineError = false
+/** True after the first successful read: until then a failure must not look like an empty board. */
+let loadedOnce = false
 let needsRedraw = true
 let lastAmbient = 0
 
-const storeReady: Promise<Store | null> = openStore().catch(err => {
-  console.error('Scout Combine Board: storage unavailable', err)
-  offlineError = true
-  needsRedraw = true
-  return null
-})
+let store: Store | null = null
+
+/** Opens the store on demand, so a board started while storage was broken recovers by itself. */
+async function getStore(): Promise<Store | null> {
+  if (store) return store
+  try {
+    store = await openStore()
+  } catch (err) {
+    console.error('Scout Combine Board: storage unavailable', err)
+  }
+  return store
+}
 
 async function reload() {
-  const store = await storeReady
-  if (!store) {
+  const s = await getStore()
+  if (!s) {
     offlineError = true
     needsRedraw = true
     return
   }
   try {
     const today = localDay(new Date())
-    runs = await store.byDay(today)
+    runs = await s.byDay(today)
+    loadedOnce = true
     offlineError = false
     needsRedraw = true
   } catch (err) {
@@ -94,7 +103,7 @@ function draw(now: number) {
   ctx.rect(0, 0, PLAY_W, PLAY_H)
   ctx.clip()
   drawSky(ctx, now, reducedMotion, true)
-  drawBoard(ctx, state, offlineError)
+  drawBoard(ctx, state, dataStatus(loadedOnce, offlineError))
   ctx.restore()
 }
 
@@ -123,4 +132,5 @@ requestAnimationFrame(t => {
   runs: () => runs,
   liveMsg: () => liveMsg,
   offlineError: () => offlineError,
+  status: () => dataStatus(loadedOnce, offlineError),
 }

@@ -36,7 +36,7 @@ npx vite preview --port 5180     # or any static server for dist/
 3. **Offline:** after this first visit a service worker has cached everything. Both pages keep working with the network unplugged, even after a reload.
 4. **Operator menu:** **Ctrl+Shift+O** on the game window (players never see it). Sound on/off, fullscreen, **Export CSV** of every run, **Clear today** (three presses in a row, so it can't happen by accident), runs saved and an error count. The game pauses while the menu is open.
 
-Runs are stored in the browser's IndexedDB on that PC. A day is the PC's local calendar date: the board starts empty at midnight and older runs stay stored for the CSV export. If storage fails, the run still plays and the card says "NOT SAVED — TELL THE BOOTH STAFF".
+Runs are stored in the browser's IndexedDB on that PC. A day is the PC's local calendar date: within a minute of midnight the board switches to the new, empty day, and older runs stay stored for the CSV export. If storage fails, the run still plays, the card says "NOT SAVED — TELL THE BOOTH STAFF", the board says "LEADERBOARD UNAVAILABLE — STORAGE ERROR" instead of looking empty, and the operator menu counts the errors.
 
 ![Leaderboard on the second monitor](docs/media/board.png)
 
@@ -61,13 +61,13 @@ Runs are stored in the browser's IndexedDB on that PC. A day is the PC's local c
 ## Development
 
 ```bash
-npm test            # 89 unit tests (Vitest): drills, scoring, run flow, store, board state, settings...
-npm run e2e         # 6 Playwright tests on the production build (run, board, offline, CSV export)
+npm test            # 93 unit tests (Vitest): drills, scoring, run flow, store, board state, settings...
+npm run e2e         # 8 Playwright tests on the production build (run, board, offline, CSV export, storage failure)
 npm run balance     # bots at three skill levels, writes docs/BALANCE.md
 npm run soak        # 2,000-run soak test against a running preview on port 5180, writes docs/SOAK.md
 ```
 
-URL parameters for testing: `?autoplay=casual|average|sharp` (a bot plays real runs) and `?speed=n` (game clock n times faster).
+URL parameters for testing: `?autoplay=casual|average|sharp` (a bot plays real runs) and `?speed=n` (game clock n times faster). Bot runs are saved like real ones, tagged `BOT`: don't use autoplay on the booth PC during an event, or clear the day afterwards.
 
 Stack: TypeScript, Vite, Canvas 2D, Web Audio. **No image, sound or font files**: every shape is drawn and every sound synthesised in code. Drills are pure state machines with an injected random generator, so tests and bots run them faster than real time.
 

@@ -135,7 +135,7 @@ export function createDrillRenderer(fx: Fx): DrillRenderer {
       hexagon(ctx, TURRET.x, TURRET.y, 70)
       ctx.fillRect(TURRET.x + 40, TURRET.y - 16, 90, 32)
       text(ctx, 'YOU', TURRET.x, TURRET.y + 120, 26, C.gold, { weight: 800, spacing: 4 })
-      // allied drones: they wear the unit down at random
+      // allied drones: they wear the unit down in a steady rhythm
       ALLIES.forEach((a, i) => {
         const hover = Math.sin(t / 240 + i * 2) * 8
         ctx.fillStyle = C.cyan

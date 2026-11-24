@@ -43,6 +43,17 @@ const live = createLive()
 let errorCount = 0
 window.addEventListener('error', () => void errorCount++)
 window.addEventListener('unhandledrejection', () => void errorCount++)
+/** A handled failure: logged and counted on the operator menu, so staff can see storage trouble. */
+function fail(what: string, err: unknown) {
+  console.error(`Scout Combine: ${what}`, err)
+  errorCount++
+}
+/** Count a failed operator action, then let the menu show it. */
+const counted = <T>(what: string, p: Promise<T>) =>
+  p.catch(err => {
+    fail(what, err)
+    throw err
+  })
 
 let run: Run | null = null
 let runBot: Bot | null = null
@@ -53,7 +64,7 @@ let lastTag = 'AAA'
 let cardLine = ''
 let savedRuns = 0
 const storeReady: Promise<Store | null> = openStore().catch(err => {
-  console.error('Scout Combine: storage unavailable', err)
+  fail('storage unavailable', err)
   return null
 })
 
@@ -67,7 +78,7 @@ async function saveRun(r: RunResult) {
     savedRuns++
     live.post({ type: 'run-end', record: rec })
   } catch (err) {
-    console.error('Scout Combine: run not saved', err)
+    fail('run not saved', err)
     cardLine = 'NOT SAVED — TELL THE BOOTH STAFF'
     return
   }
@@ -76,7 +87,7 @@ async function saveRun(r: RunResult) {
     const p = percentile(rec.scores.overall, today.map(x => x.scores.overall))
     cardLine = p === null ? 'EARLY BIRD — NOT ENOUGH PLAYERS YET' : `BETTER THAN ${p}% OF TODAY'S PLAYERS`
   } catch (err) {
-    console.error('Scout Combine: could not read today', err)
+    fail('could not read today', err)
     cardLine = 'SAVED'
   }
 }
@@ -87,24 +98,31 @@ const operator = createOperatorMenu({
     saveSettings(settings)
     audio.setEnabled(on)
   },
-  async clearToday() {
-    const store = await storeReady
-    if (!store) throw new Error('storage unavailable')
-    const day = localDay(new Date())
-    const n = (await store.byDay(day)).length
-    await store.clearDay(day)
-    return n
-  },
+  clearToday: () =>
+    counted(
+      'clear today failed',
+      (async () => {
+        const store = await storeReady
+        if (!store) throw new Error('storage unavailable')
+        const day = localDay(new Date())
+        const n = (await store.byDay(day)).length
+        await store.clearDay(day)
+        return n
+      })(),
+    ),
   errors: () => errorCount,
   savedRuns: () => savedRuns,
   extra: [
     {
       label: 'Export CSV',
-      run: async () => {
-        const s = await storeReady
-        if (!s) throw new Error('storage unavailable')
-        return exportCsv(s)
-      },
+      run: () =>
+        counted(
+          'CSV export failed',
+          storeReady.then(s => {
+            if (!s) throw new Error('storage unavailable')
+            return exportCsv(s)
+          }),
+        ),
     },
   ],
 })
@@ -153,7 +171,8 @@ function startRun() {
   demo = null
   fx.clear()
   drills.reset()
-  run = createRun(rng, lastTag)
+  // Bot runs are tagged BOT so they are easy to spot (and clear) on a real booth's board.
+  run = createRun(rng, autoplay ? 'BOT' : lastTag)
   runBot = autoplay ? createBot(autoplay, rng) : null
   audio.play('go')
 }

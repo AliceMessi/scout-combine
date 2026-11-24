@@ -1,4 +1,5 @@
 import type { RunRecord } from '../store'
+import type { DataStatus } from '../boardState'
 import { C, panel, text } from './theme'
 
 export interface BoardViewState {
@@ -33,14 +34,14 @@ function drawDrillCard(
 export function drawBoard(
   ctx: CanvasRenderingContext2D,
   state: BoardViewState,
-  offlineError: boolean,
+  status: DataStatus,
 ) {
   // Title top left
   text(ctx, "TODAY'S SCOUTS", 70, 58, 44, C.cyan, { align: 'left', glow: C.cyan })
 
-  if (offlineError) {
-    text(ctx, 'OFFLINE DATA — CHECK THE GAME WINDOW', 480, 60, 18, C.orange, {
-      align: 'left',
+  if (status === 'stale') {
+    text(ctx, 'STORAGE ERROR — SHOWING THE LAST SAVED DATA', 1530, 58, 26, C.orange, {
+      align: 'right',
       weight: 700,
     })
   }
@@ -68,7 +69,16 @@ export function drawBoard(
   ctx.stroke()
   ctx.restore()
 
-  if (state.top.length === 0) {
+  if (status === 'unavailable' || status === 'loading') {
+    text(
+      ctx,
+      status === 'loading' ? 'LOADING…' : 'LEADERBOARD UNAVAILABLE — STORAGE ERROR',
+      tableX + tableW / 2,
+      tableY + tableH / 2,
+      36,
+      status === 'loading' ? C.dim : C.orange,
+    )
+  } else if (state.top.length === 0) {
     text(
       ctx,
       'NO SCOUTS YET TODAY — BE THE FIRST',
@@ -145,7 +155,7 @@ export function drawBoard(
   )
 
   // Bottom row: Runs today and Now Playing
-  text(ctx, `RUNS TODAY: ${state.count}`, 70, 855, 24, C.dim, {
+  text(ctx, status === 'unavailable' || status === 'loading' ? 'RUNS TODAY: —' : `RUNS TODAY: ${state.count}`, 70, 855, 24, C.dim, {
     align: 'left',
     weight: 700,
   })

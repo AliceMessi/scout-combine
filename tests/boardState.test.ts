@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { boardState } from '../src/boardState'
+import { boardState, dataStatus } from '../src/boardState'
 import type { LiveMsg } from '../src/live'
 import type { RunRecord } from '../src/store'
 
@@ -103,5 +103,18 @@ describe('boardState', () => {
     expect(state.best.flick).toBeNull()
     expect(state.best.lastHit).toBeNull()
     expect(state.nowPlaying).toBeNull()
+  })
+})
+
+describe('dataStatus', () => {
+  it('a failed read before any good read is "unavailable", never an empty board', () => {
+    expect(dataStatus(false, true)).toBe('unavailable')
+  })
+  it('a failed read after a good one keeps the data and says it is stale', () => {
+    expect(dataStatus(true, true)).toBe('stale')
+  })
+  it('loading until the first read, ok after a good one', () => {
+    expect(dataStatus(false, false)).toBe('loading')
+    expect(dataStatus(true, false)).toBe('ok')
   })
 })

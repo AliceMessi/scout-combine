@@ -77,3 +77,11 @@ export function boardState(
     nowPlaying,
   }
 }
+
+export type DataStatus = 'loading' | 'ok' | 'stale' | 'unavailable'
+
+/** What the board may claim about its data. A failed read is never shown as an empty board. */
+export function dataStatus(loadedOnce: boolean, lastReadFailed: boolean): DataStatus {
+  if (lastReadFailed) return loadedOnce ? 'stale' : 'unavailable'
+  return loadedOnce ? 'ok' : 'loading'
+}

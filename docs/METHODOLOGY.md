@@ -10,15 +10,15 @@ We started from the category 3 brief (under 3 minutes, mouse or one button, no t
 
 The plan ([`docs/plans/2026-11-24-scout-combine.md`](plans/2026-11-24-scout-combine.md)) cut the work into 13 tasks. Each task names its files, the exact interfaces it produces for later tasks, the tests to write first and the command that proves it. Tasks marked 🤖 were reserved for Junie. The plan was ordered so that a **playable, good-looking slice of all three drills came at task 6**: the team played it and approved the look before we spent time on storage, the board and the soak test.
 
-The plan also lists a "Review focus": inputs the tests might miss, such as button mashing, clicks in the letterbox bars, a long hidden-tab gap, leaderboard ties and the day changing at midnight.
+The plan also lists a "Review focus": inputs the tests might miss, such as button mashing, a window resized or moved to another monitor mid-run, a long hidden-tab gap, leaderboard ties and the day changing at midnight.
 
 ## 3. Tests first, every task
 
-Every task followed red → green: write the test, watch it fail for the right reason, write the code, watch it pass, run the whole suite. The drills are pure state machines with an injected random generator and a game clock, so a 35-second drill runs in a test in milliseconds, exactly as in the game.
+We worked test-first: write the test, watch it fail for the right reason, write the code, watch it pass, run the whole suite. Where we slipped, the progress ledger says so: the card-text module was written before its test, and the soak and end-to-end tests were written for features that already existed. The drills are pure state machines with an injected random generator and a game clock, so a 35-second drill runs in a test in milliseconds, exactly as in the game.
 
 When a test or a measurement disagreed with the plan, we did not bend the test. We recorded a ruling (what we decided, why, what it costs if wrong) in a progress ledger and moved on. Examples:
 
-- Flick targets overlapped the timer text: the test failed first, then the play zone moved.
+- Flick targets could appear under the timer text (seen while playing the first slice): the play zone went into the spec and a test now pins it.
 - The service worker did not control the first visit: the offline test failed first, then `clientsClaim` fixed it.
 - An end-to-end test was flaky because the card lasts 0.1 s at 20x speed: we changed how the test watches the game (every animation frame), not the game.
 
@@ -27,7 +27,7 @@ When a test or a measurement disagreed with the plan, we did not bend the test. 
 Balance and robustness were measured with bots that play the real game code at three skill levels (casual, average, sharp), modelled on reaction time, Fitts throughput and timing error.
 
 - **Balance check** ([`docs/BALANCE.md`](BALANCE.md)): 200 runs per level. The first version showed that Last Hit gave every level the same median (50): it rewarded luck, not skill. We made the allied drones hit with a steady rhythm a player can read, swept 12 tunings with the bots, and picked the one with the clearest separation (Last Hit medians 50 / 69 / 88; overall 26 / 54 / 80).
-- **Soak test** ([`docs/SOAK.md`](SOAK.md)): 2,000 complete runs back to back on an accelerated clock, then 10 minutes in real time. Pass criteria fixed in the spec before the run: no console errors, heap within 5 MB, constant DOM, frame work under 16.7 ms at p95. All passed.
+- **Soak test** ([`docs/SOAK.md`](SOAK.md)): 2,000 complete runs back to back on an accelerated clock, then 10 minutes in real time. Pass criteria fixed in the spec before the run: no console errors, heap within 5 MB, constant DOM, p95 frame time under 16.7 ms. During the run we decided to measure frame time as the game's own work per frame (p95 0.4 ms), because the gap between frames is set by the 60 Hz display (p95 16.7 ms, exactly one refresh); `SOAK.md` reports both.
 - **End-to-end tests** drive the production build in Chromium: a full run, the board updating in a second window, both pages loading with the network off, the CSV download.
 
 ## 5. Working with Junie
@@ -44,7 +44,7 @@ Choices made because this runs for hours on one PC at a noisy event:
 - No asset files: shapes, effects and sounds are generated in code, so nothing can fail to load.
 - Everything created once at start-up (input listeners, audio graph, particle pools); each run is a fresh object, so a run cannot leak into the next.
 - The loop pauses when the tab is hidden or the operator menu is open; the reduced-motion setting turns off screen shake and cuts particles to a third.
-- Failures are visible, not silent: an unsaved run says so on the card, a board that cannot read the data keeps the last good data with a warning, and the operator menu counts errors.
+- Failures are visible, not silent: an unsaved run says so on the card, a board that cannot read the data says so in large letters (keeping the last good data if it had any), and the operator menu counts every storage error.
 
 ## 7. Security and dependencies
 

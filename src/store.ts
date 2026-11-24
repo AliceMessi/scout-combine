@@ -55,14 +55,39 @@ export function openStore(idb: IDBFactory = indexedDB): Promise<Store> {
           return Promise.reject(e)
         }
       }
+      // Writes resolve only when the transaction commits: a quota error is raised at commit,
+      // after the request itself has already succeeded.
+      const write = (f: (s: IDBObjectStore) => void): Promise<void> => {
+        try {
+          const tx = db.transaction(RUNS, 'readwrite')
+          const done = new Promise<void>((resolve, reject) => {
+            tx.oncomplete = () => resolve()
+            tx.onabort = () => reject(tx.error ?? new Error('IndexedDB transaction aborted'))
+            tx.onerror = () => reject(tx.error ?? new Error('IndexedDB transaction failed'))
+          })
+          f(tx.objectStore(RUNS))
+          return done
+        } catch (e) {
+          return Promise.reject(e)
+        }
+      }
       resolve({
-        save: r => run('readwrite', s => req(s.put(r)).then(() => undefined)),
+        save: r =>
+          write(s => {
+            s.put(r)
+          }),
         byDay: day => run('readonly', s => req(s.index('day').getAll(day)) as Promise<RunRecord[]>),
         all: () => run('readonly', s => req(s.getAll()) as Promise<RunRecord[]>),
         clearDay: day =>
-          run('readwrite', async s => {
-            const keys = await req(s.index('day').getAllKeys(day))
-            await Promise.all(keys.map(k => req(s.delete(k))))
+          write(s => {
+            // Delete through a cursor in the same transaction; the whole clear commits or none of it does.
+            const c = s.index('day').openKeyCursor(day)
+            c.onsuccess = () => {
+              const cur = c.result
+              if (!cur) return
+              s.delete(cur.primaryKey)
+              cur.continue()
+            }
           }),
         close: () => db.close(),
       })

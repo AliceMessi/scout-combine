@@ -89,7 +89,7 @@ No QR code or sharing link: that would need the internet at the booth.
 
 - **Operator menu:** `Ctrl+Shift+O`, never shown to players. Options: export all runs as CSV (download), clear today's board (asks twice), sound on/off, fullscreen. Settings persist in `localStorage`.
 - **Clean reset:** every run is a fresh `Run` object built from the attract screen. Input listeners, the animation loop, audio nodes and object pools are created once at start-up and reused; nothing is added per run.
-- **No infinite work:** when the tab is hidden the loop pauses; `prefers-reduced-motion` turns off screen shake and particles.
+- **No infinite work:** when the tab is hidden the loop pauses; `prefers-reduced-motion` turns off screen shake and cuts particles to a third (changed 24/11: a few particles keep hit feedback visible).
 - **Failure handling:** if IndexedDB fails (quota, private mode), the run still plays and the card shows the scores, with "Not saved — tell the booth staff"; a failed read is never treated as an empty board and never triggers a write. Errors are logged to the console and counted on the operator menu.
 
 ## 7. Architecture

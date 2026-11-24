@@ -14,7 +14,7 @@ Run on 2026-11-24 with `npx tsx e2e/soak.ts` against the production build (`vite
 | JS heap after forced GC | 1.85 MB | 2.87 MB | at most +5 MB | PASS |
 | DOM elements | 10 | 10 | equal | PASS |
 
-Most of the 1 MB growth is the test's own frame-timing arrays (two numbers per animation frame, about 65,000 frames in part 1), which live in the page heap; the game adds nothing per run.
+Most of the 1 MB growth is the test's own frame-timing arrays (two numbers per animation frame, about 65,000 frames in part 1), which live in the page heap. The bot path (drills, card, saving, board messages) adds nothing per run; the attract demo, human input and audio are not exercised by this test.
 
 ## Part 2: 10 minutes in real time
 

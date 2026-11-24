@@ -1,4 +1,4 @@
-import { IDBFactory } from 'fake-indexeddb'
+import { IDBFactory, IDBObjectStore } from 'fake-indexeddb'
 import { describe, expect, it } from 'vitest'
 import { openStore, toCsv, type RunRecord } from '../src/store'
 
@@ -50,5 +50,21 @@ describe('store', () => {
       'id,day,endedAt,tag,role,overall,reaction,flick,lastHit',
       'a,2026-11-24,1000,XYZ,Flex,70,40,50,60',
     ])
+  })
+  it('save rejects when the transaction aborts after the write (e.g. quota at commit)', async () => {
+    const s = await openStore(new IDBFactory())
+    const proto = IDBObjectStore.prototype as unknown as { put: (...a: unknown[]) => IDBRequest }
+    const put = proto.put
+    proto.put = function (this: IDBObjectStore, ...a: unknown[]) {
+      const r = put.apply(this, a)
+      r.addEventListener('success', () => this.transaction.abort())
+      return r
+    }
+    try {
+      await expect(s.save(rec('q', '2026-11-24'))).rejects.toBeTruthy()
+    } finally {
+      proto.put = put
+    }
+    expect(await s.all()).toEqual([])
   })
 })

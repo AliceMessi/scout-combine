@@ -12,6 +12,7 @@
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
+    "@playwright/test": "1.64.0",
     "fake-indexeddb": "6.2.7",
     "tsx": "4.23.15",
     "typescript": "6.0.3",

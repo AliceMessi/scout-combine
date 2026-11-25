@@ -54,7 +54,7 @@ Runs are stored in the browser's IndexedDB on that PC. A day is the PC's local c
 
 ## Tools
 
-- **WebStorm 2026.3** is the project IDE. The shared run configurations are committed in `.idea/runConfigurations`: `dev`, `test`, `e2e`, `soak`, `balance`.
+- **WebStorm 2026.3** is the project IDE: open the folder and run `dev`, `test`, `e2e`, `soak` or `balance` from the shared run configurations in `.idea/runConfigurations`.
 - **Junie CLI** (headless, `junie --task`) built two whole features from written briefs: the live board and the CSV export. The briefs are in `.junie/tasks/`, the project rules Junie follows are in `.junie/guidelines.md`.
 - **Claude Code** was used too, for the spec, the plan, most of the game code, the bots, the tests and the reviews. `AI_SHOWCASE.md` says which tool did what.
 

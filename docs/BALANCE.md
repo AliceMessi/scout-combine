@@ -20,4 +20,4 @@ What we want: the three levels clearly separated, and scores spread over most of
 | sharp | lastHit | 75 | 88 | 94 |
 | sharp | overall | 75 | 80 | 84 |
 
-Generated 2026-11-24.
+Generated 2026-11-25.

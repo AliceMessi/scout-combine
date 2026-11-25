@@ -4,7 +4,7 @@ How Scout Combine was built with JetBrains WebStorm and Junie, task by task, and
 
 ## In short
 
-- **WebStorm 2026.3** was the project IDE from the first commit. The shared run configurations (`dev`, `test`, `e2e`, `soak`, `balance`) are committed in `.idea/runConfigurations`.
+- **WebStorm 2026.3** is the project IDE. The scripts run from its shared run configurations (`dev`, `test`, `e2e`, `soak`, `balance`), committed in `.idea/runConfigurations` together with the project files WebStorm created when the project was opened.
 - **Junie CLI** built two complete features headless from written briefs, with their tests: the live leaderboard for the second monitor (9 files) and the CSV export. Each took a few minutes and well under a dollar of AI credits. We reviewed both, changed nothing in Junie's code, and added end-to-end tests around them.
 - **Claude Code** wrote the spec and the plan, most of the game, the bots, the soak test and the reviews.
 - **Rules for every agent:** `.junie/guidelines.md` (pure drill code, injected randomness, tests first, no asset files, no trademarks, pinned dependencies). The Junie briefs are kept in `.junie/tasks/`.
@@ -20,8 +20,8 @@ How Scout Combine was built with JetBrains WebStorm and Junie, task by task, and
 
 | # | Task | Tool | What it produced | What we changed | Tests |
 |---|---|---|---|---|---|
-| 1 | Project scaffold, WebStorm run configurations (`.idea/runConfigurations`) | WebStorm + Claude Code | Vite + TypeScript + Vitest project, `dev` and `test` run configurations | — | `npm test` green |
-| 2–4 | Game clock with sub-steps; scoring; Reaction and Flick drills as pure state machines | Claude Code in the WebStorm project | `src/clock.ts`, `src/scoring.ts`, `src/drills/reaction.ts`, `src/drills/flick.ts`, tests first | Flick targets moved clear of the timer and stats line after playtesting showed overlap; spec updated and a test pins the zone | clock, scoring, reaction, flick tests |
+| 1 | Project scaffold, WebStorm run configurations (`.idea/runConfigurations`) | Claude Code (configurations written for WebStorm) | Vite + TypeScript + Vitest project, `dev` and `test` run configurations | — | `npm test` green |
+| 2–4 | Game clock with sub-steps; scoring; Reaction and Flick drills as pure state machines | Claude Code | `src/clock.ts`, `src/scoring.ts`, `src/drills/reaction.ts`, `src/drills/flick.ts`, tests first | Flick targets moved clear of the timer and stats line after playtesting showed overlap; spec updated and a test pins the zone | clock, scoring, reaction, flick tests |
 | 5 | Last Hit drill state machine | Claude Code (done without Junie: the Junie CLI was not set up yet) | `src/drills/lasthit.ts` from spec 3.3, tests first | — | 7 tests in `tests/lasthit.test.ts` |
 | 6 | Playable run: tag screen, rule cards, card, drawing, sound | Claude Code | Canvas renderer, synthesised audio, the run sequence, the scouting card | Played and approved by the team at a checkpoint before going further | run, tag, input, cardText tests |
 | 7 | Bots at three skill levels, attract mode, balance check | Claude Code | `src/bot.ts`, `scripts/balance.ts`, [`docs/BALANCE.md`](docs/BALANCE.md) | The balance check showed Last Hit did not separate skill (all bots median 50): allies changed to a steady rhythm, 12 tunings swept, spec updated | bot tests, 600 headless runs |

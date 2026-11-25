@@ -4,6 +4,8 @@ A booth mini game for esports events. In about two minutes a fan plays three dri
 
 Built for the Cloud9 x JetBrains "Sky's The Limit" hackathon, category 3 (Event Mini Game), with WebStorm and Junie.
 
+**Demo video (2:39):** https://youtu.be/U29IVTTECA8
+
 **Play it:** https://scout-combine-hoken-tech.pages.dev (game) and https://scout-combine-hoken-tech.pages.dev/board.html (leaderboard, open it in a second window). Runs are saved only in your own browser. After the first visit both pages also work offline.
 
 ![Scouting card](docs/media/card.png)

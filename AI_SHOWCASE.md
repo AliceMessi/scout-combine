@@ -5,7 +5,7 @@ How Scout Combine was built with JetBrains WebStorm and Junie, task by task, and
 ## In short
 
 - **WebStorm 2026.3** is the project IDE. The scripts run from its shared run configurations (`dev`, `test`, `e2e`, `soak`, `balance`), committed in `.idea/runConfigurations` together with the project files WebStorm created when the project was opened.
-- **Junie CLI** built two complete features headless from written briefs, with their tests: the live leaderboard for the second monitor (9 files) and the CSV export. Each took a few minutes and well under a dollar of AI credits. We reviewed both, changed nothing in Junie's code, and added end-to-end tests around them.
+- **Junie CLI** built two complete features headless from written briefs, with their tests: the live leaderboard for the second monitor (9 files) and the CSV export. Each took a few minutes and well under a dollar of AI credits. We reviewed both and changed nothing in Junie's code at review; we added end-to-end tests around them. Later, the final whole-branch review led us to harden how the board reports storage errors (commit eb6f9a7).
 - **Claude Code** wrote the spec and the plan, most of the game, the bots, the soak test and the reviews.
 - **Rules for every agent:** `.junie/guidelines.md` (pure drill code, injected randomness, tests first, no asset files, no trademarks, pinned dependencies). The Junie briefs are kept in `.junie/tasks/`.
 
